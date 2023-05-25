@@ -1,0 +1,60 @@
+#Create a copy version of data to modify
+CREATE TABLE EV.EV_population1
+ AS (
+SELECT
+  #Create Latitude and Longitude
+  *,cast(SUBSTR(subquery.Latitude1, STRPOS(subquery.Latitude1, " ") + 1, LENGTH(subquery.Latitude1) - STRPOS(subquery.Latitude1, " ") - 1) as float64)  AS Latitude,
+  CAST(SUBSTR(subquery.Latitude1,1,STRPOS(subquery.Latitude1, " ") -1) AS FLOAT64) AS Longitude,
+  CONCAT(cast(SUBSTR(subquery.Latitude1, STRPOS(subquery.Latitude1, " ") + 1, LENGTH(subquery.Latitude1) - STRPOS(subquery.Latitude1, " ") - 1) as float64),--latitude 
+          " , " ,
+        CAST(SUBSTR(subquery.Latitude1,1,STRPOS(subquery.Latitude1, " ") -1) AS FLOAT64)--longitude
+  )
+        AS coordinate  
+  
+FROM
+(
+  SELECT
+    *,SUBSTR(Vehicle_Location, STRPOS(Vehicle_Location, " ") + 2, LENGTH(Vehicle_Location)-STRPOS(Vehicle_Location, " ") -1 ) AS Latitude1,
+    
+    
+  FROM
+    `EV.EV_population` )subquery
+
+
+WHERE State= "WA");
+
+#drop unnessary column
+alter table EV.EV_population1
+drop column Base_MSRP,
+drop column Latitude1,
+drop column VIN__1_10_
+;
+
+
+
+
+#Clean data with electric_range
+CREATE table`EV.EV_rangenot0` AS
+
+SELECT *
+FROM `EV.EV_population1` 
+Where 
+      Electric_Range != 0
+
+
+;
+#Caculate total model
+select 
+Make,
+Count(DOL_Vehicle_ID) as Count_of_make
+
+FROM `EV.EV_rangenot0`
+
+group by Make
+;
+#Caculate all the vehicle
+SELECT count(DOL_Vehicle_ID) As Number_of_vehicle,Model_Year
+from
+`EV.EV_rangenot0`
+group by Model_Year
+        
